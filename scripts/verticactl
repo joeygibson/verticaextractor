@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+if [[ "$#" -eq 0 ]]; then
+    echo "Usage: verticactl [start|stop|status|logs]"
+    echo "    -f with logs will tail the log"
+    exit 1
+fi
+
+if [[ "$1" == "start" ]]; then
+  docker run -p 5433:5433 -d -v $(pwd)/data/db/vertica_data:/home/dbadmin/docker dataplatform/docker-vertica
+elif [[ "$1" == "stop" ]]; then
+  PID=$(docker ps | grep vertica | awk '{print $1}')
+  docker kill ${PID}
+elif [[ "$1" == "status" ]]; then
+  docker ps | grep vertica
+elif [[ "$1" == "logs" ]]; then
+  PID=$(docker ps | grep vertica | awk '{print $1}')
+  docker logs $2 ${PID}
+else 
+  echo "Usage: verticactl [start|stop]"
+  exit 1
+fi
+
+
+
