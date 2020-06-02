@@ -1,0 +1,1 @@
+select * from XX_TABLE_NAME_XX;
