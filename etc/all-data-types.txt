@@ -1,0 +1,280 @@
+-[ RECORD 1 ]------------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-1
+column_name              | INTCOL
+data_type                | int
+data_type_id             | 6
+data_type_length         | 8
+character_maximum_length |
+numeric_precision        |
+numeric_scale            |
+datetime_precision       |
+interval_precision       |
+ordinal_position         | 1
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f
+-[ RECORD 2 ]------------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-2
+column_name              | FLOATCOL
+data_type                | float
+data_type_id             | 7
+data_type_length         | 8
+character_maximum_length |
+numeric_precision        |
+numeric_scale            |
+datetime_precision       |
+interval_precision       |
+ordinal_position         | 2
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f
+-[ RECORD 3 ]------------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-3
+column_name              | CHARCOL
+data_type                | char(10)
+data_type_id             | 8
+data_type_length         | 10
+character_maximum_length | 10
+numeric_precision        |
+numeric_scale            |
+datetime_precision       |
+interval_precision       |
+ordinal_position         | 3
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f
+-[ RECORD 4 ]------------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-4
+column_name              | VARCHARCOL
+data_type                | varchar(80)
+data_type_id             | 9
+data_type_length         | 80
+character_maximum_length | 80
+numeric_precision        |
+numeric_scale            |
+datetime_precision       |
+interval_precision       |
+ordinal_position         | 4
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f
+-[ RECORD 5 ]------------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-5
+column_name              | BOOLCOL
+data_type                | boolean
+data_type_id             | 5
+data_type_length         | 1
+character_maximum_length |
+numeric_precision        |
+numeric_scale            |
+datetime_precision       |
+interval_precision       |
+ordinal_position         | 5
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f
+-[ RECORD 6 ]------------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-6
+column_name              | DATECOL
+data_type                | date
+data_type_id             | 10
+data_type_length         | 8
+character_maximum_length |
+numeric_precision        |
+numeric_scale            |
+datetime_precision       |
+interval_precision       |
+ordinal_position         | 6
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f
+-[ RECORD 7 ]------------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-7
+column_name              | TIMESTAMPCOL
+data_type                | timestamp
+data_type_id             | 12
+data_type_length         | 8
+character_maximum_length |
+numeric_precision        |
+numeric_scale            |
+datetime_precision       |
+interval_precision       |
+ordinal_position         | 7
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f
+-[ RECORD 8 ]------------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-8
+column_name              | TIMESTAMPTZCOL
+data_type                | timestamptz
+data_type_id             | 13
+data_type_length         | 8
+character_maximum_length |
+numeric_precision        |
+numeric_scale            |
+datetime_precision       |
+interval_precision       |
+ordinal_position         | 8
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f
+-[ RECORD 9 ]------------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-9
+column_name              | TIMECOL
+data_type                | time
+data_type_id             | 11
+data_type_length         | 8
+character_maximum_length |
+numeric_precision        |
+numeric_scale            |
+datetime_precision       |
+interval_precision       |
+ordinal_position         | 9
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f
+-[ RECORD 10 ]-----------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-10
+column_name              | TIMETZCOL
+data_type                | timetz
+data_type_id             | 15
+data_type_length         | 8
+character_maximum_length |
+numeric_precision        |
+numeric_scale            |
+datetime_precision       |
+interval_precision       |
+ordinal_position         | 10
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f
+-[ RECORD 11 ]-----------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-11
+column_name              | VARBINCOL
+data_type                | varbinary(80)
+data_type_id             | 17
+data_type_length         | 80
+character_maximum_length | 80
+numeric_precision        |
+numeric_scale            |
+datetime_precision       |
+interval_precision       |
+ordinal_position         | 11
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f
+-[ RECORD 12 ]-----------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-12
+column_name              | BINCOL
+data_type                | binary(1)
+data_type_id             | 117
+data_type_length         | 1
+character_maximum_length | 1
+numeric_precision        |
+numeric_scale            |
+datetime_precision       |
+interval_precision       |
+ordinal_position         | 12
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f
+-[ RECORD 13 ]-----------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-13
+column_name              | NUMCOL
+data_type                | numeric(38,0)
+data_type_id             | 16
+data_type_length         | 24
+character_maximum_length |
+numeric_precision        | 38
+numeric_scale            | 0
+datetime_precision       |
+interval_precision       |
+ordinal_position         | 13
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f
+-[ RECORD 14 ]-----------+---------------------
+table_id                 | 45035996273715500
+table_schema             | public
+table_name               | allTypes
+is_system_table          | f
+column_id                | 45035996273715500-14
+column_name              | INTERVALCOL
+data_type                | interval
+data_type_id             | 14
+data_type_length         | 8
+character_maximum_length |
+numeric_precision        |
+numeric_scale            |
+datetime_precision       |
+interval_precision       | 6
+ordinal_position         | 14
+is_nullable              | t
+column_default           |
+column_set_using         |
+is_identity              | f

@@ -1,4 +1,5 @@
 use std::env;
+use std::path::Path;
 
 use getopts::Options;
 
@@ -9,7 +10,12 @@ fn main() {
     let program = args[0].clone();
 
     let mut opts = Options::new();
-    opts.optopt("s", "server", "server to connect to [default: localhost]", "NAME");
+    opts.optopt(
+        "s",
+        "server",
+        "server to connect to [default: localhost]",
+        "NAME",
+    );
     opts.optopt("p", "port", "port to connect to [default: 5433]", "NUMBER");
     opts.optopt("d", "database", "database to extract from", "NAME");
     opts.optopt(
@@ -54,7 +60,7 @@ fn main() {
             eprintln!("server name must be given as a string");
             print_usage(&program, opts);
             return;
-        },
+        }
     };
 
     let port = match matches.opt_get_default("p", 5433) {
@@ -113,8 +119,22 @@ fn main() {
         }
     };
 
+    let output_path = Path::new(&output);
+
+    // if output_path.exists() {
+    //     eprintln!("file [{}] exists", output);
+    //     return;
+    // }
+
     match extract(
-        server, port, database, username, password, table, limit, output,
+        server,
+        port,
+        database,
+        username,
+        password,
+        table,
+        limit,
+        output_path,
     ) {
         Ok(_) => {}
         Err(e) => eprintln!("Error: {}", e),
