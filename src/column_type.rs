@@ -3,10 +3,10 @@ use crate::sql_data_type::SqlDataType;
 #[derive(Debug)]
 pub struct ColumnType {
     name: String,
-    data_type: SqlDataType,
-    width: u16,
-    precision: Option<u16>,
-    scale: Option<u16>,
+    pub(crate) data_type: SqlDataType,
+    pub(crate) width: u16,
+    pub(crate) precision: Option<u16>,
+    pub(crate) scale: Option<u16>,
 }
 
 impl ColumnType {

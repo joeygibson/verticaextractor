@@ -1,1 +1,1 @@
-select * from XX_TABLE_NAME_XX;
+select * from XX_TABLE_NAME_XX XX_LIMIT_XX;
