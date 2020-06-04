@@ -19,7 +19,6 @@ pub enum SqlDataType {
     Binary,
     Numeric,
     Interval,
-    Unknown,
 }
 
 impl SqlDataType {
@@ -45,7 +44,7 @@ impl SqlDataType {
             "binary" => SqlDataType::Binary,
             "numeric" => SqlDataType::Numeric,
             "interval" => SqlDataType::Interval,
-            _ => SqlDataType::Unknown,
+            _ => panic!("unknown data type"),
         }
     }
 }

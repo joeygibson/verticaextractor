@@ -3,12 +3,14 @@ use std::fs::{File, FileType};
 use std::io::Write;
 use std::path::Path;
 
-use odbc::create_environment_v3;
+use chrono::{Date, NaiveDate, NaiveDateTime, NaiveTime};
+use odbc::{create_environment_v3, SqlDate, SqlTime, SqlTimestamp};
 use odbc::odbc_safe::AutocommitOn;
 use odbc::ResultSetState::{Data, NoData};
 use odbc::{Connection, Statement};
 
 use crate::column_type::ColumnType;
+use crate::encoding::encode_value;
 use crate::sql_data_type::SqlDataType;
 
 mod column_type;
@@ -61,10 +63,52 @@ pub fn extract(
 
             while let Some(mut cursor) = stmt.fetch()? {
                 for i in 1..(cols + 1) {
-                    let value = cursor.get_data::<&str>(i as u16)?;
                     let col_type = &column_types[(i - 1) as usize];
 
-                    let bytes = encoding::encode_value(value, &col_type);
+                    let byte_val: Vec<u8> = match col_type.data_type {
+                        SqlDataType::Integer | SqlDataType::Interval => {
+                            let value = cursor.get_data::<i64>(i as u16)?;
+                            encode_value::<Option<i64>>(value, col_type)
+                        }
+                        SqlDataType::Float => {
+                            let value = cursor.get_data::<f64>(i as u16)?;
+                            encode_value::<Option<f64>>(value, col_type)
+                        }
+                        SqlDataType::Char | SqlDataType::Varchar => {
+                            let value = cursor.get_data::<&str>(i as u16)?;
+                            encode_value::<Option<&str>>(value, col_type)
+                        }
+                        SqlDataType::Boolean => match cursor.get_data::<bool>(i as u16)? {
+                            None => vec![0],
+                            Some(b) => vec![b as u8],
+                        },
+                        SqlDataType::Date => {
+                            let value = cursor.get_data::<SqlDate>(i as u16)?;
+                            encode_value::<Option<SqlDate>>(value, col_type)
+                        }
+                        SqlDataType::Timestamp => {
+                            let value = cursor.get_data::<SqlTimestamp>(i as u16)?;
+                            encode_value::<Option<SqlTimestamp>>(value, col_type)
+                        }
+                        SqlDataType::TimestampTz => {
+                            let value = cursor.get_data::<SqlTimestamp>(i as u16)?;
+                            encode_value::<Option<SqlTimestamp>>(value, col_type)
+                        }
+                        SqlDataType::Time => {
+                            let value = cursor.get_data::<SqlTime>(i as u16)?;
+                            encode_value::<Option<SqlTime>>(value, col_type)
+                        }
+                        SqlDataType::TimeTz => {
+                            let value = cursor.get_data::<SqlTime>(i as u16)?;
+                            encode_value::<Option<SqlTime>>(value, col_type)
+                        }
+                        SqlDataType::Varbinary | SqlDataType::Binary | SqlDataType::Numeric => {
+                            let value = cursor.get_data::<Vec<u8>>(i as u16)?;
+                            encode_value::<Option<Vec<u8>>>(value, col_type)
+                        }
+                    };
+
+                    // let bytes = encoding::encode_value(value, &col_type);
                 }
             }
         }
@@ -108,7 +152,6 @@ fn generate_column_definitions(column_types: &Vec<ColumnType>) -> Vec<u8> {
                     0
                 }
             }
-            SqlDataType::Unknown => 0,
         };
 
         sizes.push(width);
