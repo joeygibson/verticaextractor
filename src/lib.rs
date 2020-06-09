@@ -15,6 +15,7 @@ use odbc::{Connection, Statement};
 
 use crate::column_type::ColumnType;
 use crate::sql_data_type::SqlDataType;
+use std::str::FromStr;
 
 mod column_type;
 mod sql_data_type;
@@ -82,6 +83,7 @@ pub fn extract(
                             }
                         }
                         SqlDataType::Interval => {
+                            // TODO: Try SqlIntervalStruct
                             let value = cursor.get_data::<&[u8]>(i as u16)?;
                             match value {
                                 None => {
@@ -222,6 +224,7 @@ pub fn extract(
                             }
                         }
                         SqlDataType::Time => {
+                            // TODO this one or TimeTz is wrong
                             let value = cursor.get_data::<SqlTime>(i as u16)?;
                             match value {
                                 None => {
@@ -247,6 +250,7 @@ pub fn extract(
                             }
                         }
                         SqlDataType::TimeTz => {
+                            // TODO this one or Time is wrong
                             let value = cursor.get_data::<SqlTime>(i as u16)?;
                             match value {
                                 None => {
@@ -271,7 +275,7 @@ pub fn extract(
                                 }
                             }
                         }
-                        SqlDataType::Varbinary | SqlDataType::Binary => {
+                        SqlDataType::Varbinary => {
                             let value = cursor.get_data::<Vec<u8>>(i as u16)?;
                             match value {
                                 None => {
@@ -288,20 +292,42 @@ pub fn extract(
                                 }
                             }
                         }
-                        SqlDataType::Numeric => {
+                        SqlDataType::Binary => {
                             let value = cursor.get_data::<Vec<u8>>(i as u16)?;
                             match value {
                                 None => {
                                     nulls[i as usize] = true;
                                     vec![]
                                 }
+                                Some(value) => value,
+                            }
+                        }
+                        SqlDataType::Numeric => {
+                            let value = cursor.get_data::<&str>(i as u16)?;
+                            match value {
+                                None => {
+                                    nulls[i as usize] = true;
+                                    vec![]
+                                }
                                 Some(value) => {
-                                    let byte_len: u32 = value.len() as u32;
+                                    let num = u128::from_str(value)?;
+                                    let exp = match col_type.scale {
+                                        None => 0,
+                                        Some(exp) => exp,
+                                    };
+                                    let mul = 10_u128.pow(exp as u32);
+                                    let unscaled = num * mul;
+                                    let unscaled_bytes = unscaled.to_le_bytes();
+                                    let byte_len = unscaled_bytes.len();
+                                    let mut padded_bytes = vec![0; (col_type.width as usize - byte_len) as usize];
+                                    padded_bytes.extend_from_slice(&unscaled_bytes);
 
-                                    let mut rec: Vec<u8> = byte_len.to_le_bytes().to_vec();
-                                    rec.extend(value);
+                                    if num < 0 {
+                                        negate(&mut padded_bytes, (col_type.width as usize - byte_len));
+                                    }
 
-                                    rec
+
+                                    padded_bytes.to_vec()
                                 }
                             }
                         }
@@ -329,6 +355,12 @@ pub fn extract(
     };
 
     Ok(())
+}
+
+fn negate(bytes: &mut [u8], head: usize) {
+    for i in 0..head {
+        bytes[i] ^= 0xFF;
+    }
 }
 
 fn create_nulls_bitmap(cols: i16, nulls: &Vec<bool>) -> Vec<u8> {
