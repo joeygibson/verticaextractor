@@ -1,1 +1,1 @@
-select * from XX_TABLE_NAME_XX XX_LIMIT_XX;
+select intcol, floatcol, charcol from XX_TABLE_NAME_XX XX_LIMIT_XX;

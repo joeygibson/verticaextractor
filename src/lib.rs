@@ -2,6 +2,7 @@ use std::convert::TryInto;
 use std::error::Error;
 use std::fs::{File, FileType};
 use std::io::Write;
+use std::mem::size_of;
 use std::ops::Sub;
 use std::path::Path;
 
@@ -14,7 +15,6 @@ use odbc::{Connection, Statement};
 
 use crate::column_type::ColumnType;
 use crate::sql_data_type::SqlDataType;
-use std::mem::size_of;
 
 mod column_type;
 mod sql_data_type;
@@ -56,6 +56,7 @@ pub fn extract(
     let stmt = Statement::with_parent(&conn)?;
 
     match stmt.exec_direct(&query)? {
+        NoData(_) => println!("no data returned"),
         Data(mut stmt) => {
             let mut output_file = File::create(&output_path)?;
             output_file.write(&FILE_HEADER);
@@ -77,7 +78,14 @@ pub fn extract(
                                     nulls[i as usize] = true;
                                     vec![]
                                 }
-                                Some(value) => value.to_le_bytes().to_vec(),
+                                Some(value) => {
+                                    let x = value.to_le_bytes();
+                                    println!("{:?}", x);
+                                    let vx = x.to_vec();
+                                    println!("{:?}", vx);
+
+                                    vx
+                                },
                             }
                         }
                         SqlDataType::Interval => {
@@ -247,10 +255,30 @@ pub fn extract(
                         }
                         SqlDataType::TimeTz => {
                             let value = cursor.get_data::<SqlTime>(i as u16)?;
-                            // TODO
-                            vec![]
+                            match value {
+                                None => {
+                                    nulls[i as usize] = true;
+                                    vec![]
+                                }
+                                Some(value) => {
+                                    let midnight = NaiveTime::from_hms_nano(0, 0, 0, 0);
+
+                                    let the_time = NaiveTime::from_hms(
+                                        value.hour as u32,
+                                        value.minute as u32,
+                                        value.second as u32,
+                                    );
+
+                                    let diff = match (the_time - midnight).num_microseconds() {
+                                        None => 0,
+                                        Some(diff) => diff,
+                                    };
+
+                                    diff.to_le_bytes().to_vec()
+                                }
+                            }
                         }
-                        SqlDataType::Varbinary | SqlDataType::Binary | SqlDataType::Numeric => {
+                        SqlDataType::Varbinary | SqlDataType::Binary => {
                             let value = cursor.get_data::<Vec<u8>>(i as u16)?;
                             match value {
                                 None => {
@@ -267,6 +295,10 @@ pub fn extract(
                                 }
                             }
                         }
+                        SqlDataType::Numeric => {
+                            nulls[i as usize] = true;
+                            vec![]
+                        }
                     };
 
                     &values.push(byte_val);
@@ -274,22 +306,23 @@ pub fn extract(
 
                 let bitmap = create_nulls_bitmap(cols, &nulls);
 
-                let row_size = bitmap.len() +
-                    (&values).iter().fold(0, |acc, x| {
-                        acc + x.len()
-                    });
+                let row_size = bitmap.len() + (&values).iter().fold(0, |acc, x| acc + x.len());
 
-                let flattened_values= (&values)
+                let flattened_values = (&values)
                     .into_iter()
                     .flatten()
                     .map(|v| *v)
                     .collect::<Vec<u8>>();
+
+                println!("{:X?}", values);
+                println!("{:X?}", flattened_values);
+
                 output_file.write(&row_size.to_le_bytes());
                 output_file.write(&bitmap.as_slice());
-                output_file.write(&flattened_values);
+                // output_file.write(&flattened_values);
+                output_file.write_all(&flattened_values);
             }
         }
-        NoData(_) => println!("no data returned"),
     };
 
     Ok(())
@@ -319,10 +352,8 @@ fn create_nulls_bitmap(cols: i16, nulls: &Vec<bool>) -> Vec<u8> {
 }
 
 fn generate_column_definitions(column_types: &Vec<ColumnType>) -> Vec<u8> {
-    let mut bytes: Vec<u8> = vec![];
-
     // file version; only supported version is `1`
-    bytes.extend_from_slice(&1_u16.to_le_bytes()[..]);
+    let mut bytes: Vec<u8> = 1_u16.to_le_bytes().to_vec();
 
     // single-byte filler; value `0`
     bytes.push(0);
@@ -358,13 +389,8 @@ fn generate_column_definitions(column_types: &Vec<ColumnType>) -> Vec<u8> {
 
     let header_length = bytes.len() as u32;
 
-    let mut header: Vec<u8> = vec![];
-
-    header.extend_from_slice(&header_length.to_le_bytes()[..]);
-
-    for byte in bytes {
-        header.push(byte);
-    }
+    let mut header: Vec<u8> = header_length.to_le_bytes().to_vec();
+    header.extend(bytes);
 
     header
 }
