@@ -78,14 +78,7 @@ pub fn extract(
                                     nulls[i as usize] = true;
                                     vec![]
                                 }
-                                Some(value) => {
-                                    let x = value.to_le_bytes();
-                                    println!("{:?}", x);
-                                    let vx = x.to_vec();
-                                    println!("{:?}", vx);
-
-                                    vx
-                                },
+                                Some(value) => value.to_le_bytes().to_vec(),
                             }
                         }
                         SqlDataType::Interval => {
@@ -306,7 +299,8 @@ pub fn extract(
 
                 let bitmap = create_nulls_bitmap(cols, &nulls);
 
-                let row_size = bitmap.len() + (&values).iter().fold(0, |acc, x| acc + x.len());
+                let row_size: u32 =
+                    bitmap.len() as u32 + (&values).iter().fold(0, |acc, x| acc + x.len()) as u32;
 
                 let flattened_values = (&values)
                     .into_iter()
@@ -314,12 +308,8 @@ pub fn extract(
                     .map(|v| *v)
                     .collect::<Vec<u8>>();
 
-                println!("{:X?}", values);
-                println!("{:X?}", flattened_values);
-
                 output_file.write(&row_size.to_le_bytes());
                 output_file.write(&bitmap.as_slice());
-                // output_file.write(&flattened_values);
                 output_file.write_all(&flattened_values);
             }
         }
