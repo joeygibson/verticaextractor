@@ -5,17 +5,17 @@ use std::io::Write;
 use std::mem::size_of;
 use std::ops::Sub;
 use std::path::Path;
+use std::str::FromStr;
 
 use chrono::{Date, NaiveDate, NaiveDateTime, NaiveTime};
-use odbc::odbc_safe::sys::SQL_DATE_STRUCT;
+use odbc::odbc_safe::sys::{SQLINTERVAL, SQL_DATE_STRUCT, SQL_INTERVAL_STRUCT, SQL_INTERVAL_UNION};
 use odbc::odbc_safe::AutocommitOn;
 use odbc::ResultSetState::{Data, NoData};
-use odbc::{create_environment_v3, SqlDate, SqlTime, SqlTimestamp};
+use odbc::{create_environment_v3, EncodedValue, OdbcType, SqlDate, SqlTime, SqlTimestamp};
 use odbc::{Connection, Statement};
 
 use crate::column_type::ColumnType;
 use crate::sql_data_type::SqlDataType;
-use std::str::FromStr;
 
 mod column_type;
 mod sql_data_type;
@@ -76,7 +76,7 @@ pub fn extract(
                             let value = cursor.get_data::<i64>(i as u16)?;
                             match value {
                                 None => {
-                                    nulls[i as usize] = true;
+                                    nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
                                 Some(value) => value.to_le_bytes().to_vec(),
@@ -84,20 +84,29 @@ pub fn extract(
                         }
                         SqlDataType::Interval => {
                             // TODO: Try SqlIntervalStruct
-                            let value = cursor.get_data::<&[u8]>(i as u16)?;
+                            let value = cursor.get_data::<&str>(i as u16)?;
                             match value {
                                 None => {
-                                    nulls[i as usize] = true;
+                                    nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
-                                Some(value) => value.to_vec(),
+                                Some(value) => value.as_bytes().to_vec(),
                             }
+
+                            // let value = cursor.get_data::<&[u8]>(i as u16)?;
+                            // match value {
+                            //     None => {
+                            //         nulls[(i - 1) as usize] = true;
+                            //         vec![]
+                            //     }
+                            //     Some(value) => value.to_vec(),
+                            // }
                         }
                         SqlDataType::Float => {
                             let value = cursor.get_data::<f64>(i as u16)?;
                             match value {
                                 None => {
-                                    nulls[i as usize] = true;
+                                    nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
                                 Some(value) => value.to_le_bytes().to_vec(),
@@ -107,7 +116,7 @@ pub fn extract(
                             let value = cursor.get_data::<&str>(i as u16)?;
                             match value {
                                 None => {
-                                    nulls[i as usize] = true;
+                                    nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
                                 Some(value) => value.as_bytes().to_vec(),
@@ -117,7 +126,7 @@ pub fn extract(
                             let value = cursor.get_data::<&str>(i as u16)?;
                             match value {
                                 None => {
-                                    nulls[i as usize] = true;
+                                    nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
                                 Some(value) => {
@@ -133,7 +142,7 @@ pub fn extract(
                         }
                         SqlDataType::Boolean => match cursor.get_data::<bool>(i as u16)? {
                             None => {
-                                nulls[i as usize] = true;
+                                nulls[(i - 1) as usize] = true;
                                 vec![]
                             }
                             Some(b) => vec![b as u8],
@@ -143,7 +152,7 @@ pub fn extract(
 
                             match value {
                                 None => {
-                                    nulls[i as usize] = true;
+                                    nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
                                 Some(value) => {
@@ -164,7 +173,7 @@ pub fn extract(
                             let value = cursor.get_data::<SqlTimestamp>(i as u16)?;
                             match value {
                                 None => {
-                                    nulls[i as usize] = true;
+                                    nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
                                 Some(value) => {
@@ -196,7 +205,7 @@ pub fn extract(
                             let value = cursor.get_data::<SqlTimestamp>(i as u16)?;
                             match value {
                                 None => {
-                                    nulls[i as usize] = true;
+                                    nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
                                 Some(value) => {
@@ -228,7 +237,7 @@ pub fn extract(
                             let value = cursor.get_data::<SqlTime>(i as u16)?;
                             match value {
                                 None => {
-                                    nulls[i as usize] = true;
+                                    nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
                                 Some(value) => {
@@ -254,7 +263,7 @@ pub fn extract(
                             let value = cursor.get_data::<SqlTime>(i as u16)?;
                             match value {
                                 None => {
-                                    nulls[i as usize] = true;
+                                    nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
                                 Some(value) => {
@@ -279,7 +288,7 @@ pub fn extract(
                             let value = cursor.get_data::<Vec<u8>>(i as u16)?;
                             match value {
                                 None => {
-                                    nulls[i as usize] = true;
+                                    nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
                                 Some(value) => {
@@ -296,7 +305,7 @@ pub fn extract(
                             let value = cursor.get_data::<Vec<u8>>(i as u16)?;
                             match value {
                                 None => {
-                                    nulls[i as usize] = true;
+                                    nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
                                 Some(value) => value,
@@ -306,28 +315,51 @@ pub fn extract(
                             let value = cursor.get_data::<&str>(i as u16)?;
                             match value {
                                 None => {
-                                    nulls[i as usize] = true;
+                                    nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
                                 Some(value) => {
-                                    let num = u128::from_str(value)?;
+                                    let num = u64::from_str(value)?;
                                     let exp = match col_type.scale {
                                         None => 0,
                                         Some(exp) => exp,
                                     };
-                                    let mul = 10_u128.pow(exp as u32);
+                                    let mul = 10_u64.pow(exp as u32);
                                     let unscaled = num * mul;
-                                    let unscaled_bytes = unscaled.to_le_bytes();
+                                    let mut unscaled_bytes = unscaled.to_le_bytes();
+
+                                    let mut unscaled_bytes: Vec<u8> = unscaled_bytes
+                                        .iter()
+                                        .rev()
+                                        .skip_while(|b| **b == 0)
+                                        .map(|b| *b)
+                                        .collect();
+
+                                    unscaled_bytes.reverse();
+
                                     let byte_len = unscaled_bytes.len();
-                                    let mut padded_bytes = vec![0; (col_type.width as usize - byte_len) as usize];
+                                    let mut padded_bytes =
+                                        vec![0; (col_type.width as usize - byte_len) as usize];
                                     padded_bytes.extend_from_slice(&unscaled_bytes);
 
                                     if num < 0 {
-                                        negate(&mut padded_bytes, (col_type.width as usize - byte_len));
+                                        negate(
+                                            &mut padded_bytes,
+                                            (col_type.width as usize - byte_len),
+                                        );
                                     }
 
+                                    let mut final_bytes: Vec<u8> = vec![];
 
-                                    padded_bytes.to_vec()
+                                    for i in 0..(padded_bytes.len() / 8) {
+                                        let chunk =
+                                            &padded_bytes[(i as usize) * 8..(i as usize + 1) * 8];
+                                        for byte in chunk.iter().rev() {
+                                            final_bytes.push(*byte);
+                                        }
+                                    }
+
+                                    final_bytes
                                 }
                             }
                         }
@@ -347,6 +379,7 @@ pub fn extract(
                     .map(|v| *v)
                     .collect::<Vec<u8>>();
 
+                println!("flattened_values: {:?}", flattened_values);
                 output_file.write(&row_size.to_le_bytes());
                 output_file.write(&bitmap.as_slice());
                 output_file.write_all(&flattened_values);

@@ -44,6 +44,8 @@ impl SqlDataType {
             "binary" => SqlDataType::Binary,
             "numeric" => SqlDataType::Numeric,
             "interval" => SqlDataType::Interval,
+            "interval year to month" => SqlDataType::Interval,
+            "interval day to minute" => SqlDataType::Interval,
             _ => panic!("unknown data type"),
         }
     }
