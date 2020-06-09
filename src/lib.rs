@@ -289,8 +289,21 @@ pub fn extract(
                             }
                         }
                         SqlDataType::Numeric => {
-                            nulls[i as usize] = true;
-                            vec![]
+                            let value = cursor.get_data::<Vec<u8>>(i as u16)?;
+                            match value {
+                                None => {
+                                    nulls[i as usize] = true;
+                                    vec![]
+                                }
+                                Some(value) => {
+                                    let byte_len: u32 = value.len() as u32;
+
+                                    let mut rec: Vec<u8> = byte_len.to_le_bytes().to_vec();
+                                    rec.extend(value);
+
+                                    rec
+                                }
+                            }
                         }
                     };
 
