@@ -7,12 +7,15 @@ use std::ops::Sub;
 use std::path::Path;
 use std::str::FromStr;
 
-use chrono::{Date, NaiveDate, NaiveDateTime, NaiveTime};
+use chrono::{Date, DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use odbc::odbc_safe::sys::{SQLINTERVAL, SQL_DATE_STRUCT, SQL_INTERVAL_STRUCT, SQL_INTERVAL_UNION};
 use odbc::odbc_safe::AutocommitOn;
 use odbc::ResultSetState::{Data, NoData};
 use odbc::{create_environment_v3, EncodedValue, OdbcType, SqlDate, SqlTime, SqlTimestamp};
 use odbc::{Connection, Statement};
+use regex::Regex;
+
+use lazy_static::lazy_static;
 
 use crate::column_type::ColumnType;
 use crate::sql_data_type::SqlDataType;
@@ -84,23 +87,53 @@ pub fn extract(
                         }
                         SqlDataType::Interval => {
                             // TODO: Try SqlIntervalStruct
-                            let value = cursor.get_data::<&str>(i as u16)?;
+                            let value = cursor.get_data::<Vec<u8>>(i as u16)?;
                             match value {
                                 None => {
                                     nulls[(i - 1) as usize] = true;
                                     vec![]
                                 }
-                                Some(value) => value.as_bytes().to_vec(),
+                                Some(value) => {
+                                    value
+                                    // lazy_static! {
+                                    //     static ref chunker: Regex =
+                                    //         Regex::new(r"\d*\s*(\d+):(\d+):(\d+)\.(\d+)").unwrap();
+                                    // }
+                                    //
+                                    // if chunker.is_match(value) {
+                                    //     let captures = chunker.captures(value).unwrap();
+                                    //     let hours: u32 = captures
+                                    //         .get(1)
+                                    //         .map_or("", |m| m.as_str())
+                                    //         .parse()
+                                    //         .unwrap();
+                                    //     let minutes: u32 = captures
+                                    //         .get(2)
+                                    //         .map_or("", |m| m.as_str())
+                                    //         .parse()
+                                    //         .unwrap();
+                                    //     let seconds: u32 = captures
+                                    //         .get(3)
+                                    //         .map_or("", |m| m.as_str())
+                                    //         .parse()
+                                    //         .unwrap();
+                                    //     let millis: u32 = captures
+                                    //         .get(4)
+                                    //         .map_or("", |m| m.as_str())
+                                    //         .parse()
+                                    //         .unwrap();
+                                    //
+                                    //     let res = (hours * 3600000000)
+                                    //         + (minutes * 60000000)
+                                    //         + (seconds * 1000000)
+                                    //         + (millis * 1000);
+                                    //
+                                    //     res.to_le_bytes().to_vec()
+                                    // } else {
+                                    //     vec![]
+                                    // }
+                                }
                             }
-
-                            // let value = cursor.get_data::<&[u8]>(i as u16)?;
-                            // match value {
-                            //     None => {
-                            //         nulls[(i - 1) as usize] = true;
-                            //         vec![]
-                            //     }
-                            //     Some(value) => value.to_vec(),
-                            // }
                         }
                         SqlDataType::Float => {
                             let value = cursor.get_data::<f64>(i as u16)?;
@@ -169,39 +202,7 @@ pub fn extract(
                                 }
                             }
                         }
-                        SqlDataType::Timestamp => {
-                            let value = cursor.get_data::<SqlTimestamp>(i as u16)?;
-                            match value {
-                                None => {
-                                    nulls[(i - 1) as usize] = true;
-                                    vec![]
-                                }
-                                Some(value) => {
-                                    let epoch =
-                                        NaiveDate::from_ymd(2000, 1, 1).and_hms_milli(0, 0, 0, 0);
-                                    let the_date = NaiveDate::from_ymd(
-                                        value.year as i32,
-                                        value.month as u32,
-                                        value.day as u32,
-                                    )
-                                    .and_hms_nano(
-                                        value.hour as u32,
-                                        value.minute as u32,
-                                        value.second as u32,
-                                        value.fraction as u32,
-                                    );
-
-                                    let diff = match (the_date - epoch).num_microseconds() {
-                                        None => 0,
-                                        Some(diff) => diff,
-                                    };
-
-                                    diff.to_le_bytes().to_vec()
-                                }
-                            }
-                        }
-                        SqlDataType::TimestampTz => {
-                            // TODO: either this one or Timestamp needs to be adjusted for local TZ
+                        SqlDataType::Timestamp | SqlDataType::TimestampTz => {
                             let value = cursor.get_data::<SqlTimestamp>(i as u16)?;
                             match value {
                                 None => {
@@ -233,7 +234,6 @@ pub fn extract(
                             }
                         }
                         SqlDataType::Time => {
-                            // TODO this one or TimeTz is wrong
                             let value = cursor.get_data::<SqlTime>(i as u16)?;
                             match value {
                                 None => {
@@ -259,8 +259,7 @@ pub fn extract(
                             }
                         }
                         SqlDataType::TimeTz => {
-                            // TODO this one or Time is wrong
-                            let value = cursor.get_data::<SqlTime>(i as u16)?;
+                            let value = cursor.get_data::<Vec<u8>>(i as u16)?;
                             match value {
                                 None => {
                                     nulls[(i - 1) as usize] = true;
@@ -268,11 +267,20 @@ pub fn extract(
                                 }
                                 Some(value) => {
                                     let midnight = NaiveTime::from_hms_nano(0, 0, 0, 0);
+                                    let local_now = Local::now();
+                                    let local_local = local_now.naive_local();
+                                    let local_utc = local_now.naive_utc();
+
+                                    let hour = u16::from_le_bytes(value[0..2].try_into().unwrap());
+                                    let minute =
+                                        u16::from_le_bytes(value[2..4].try_into().unwrap());
+                                    let second =
+                                        u16::from_le_bytes(value[4..6].try_into().unwrap());
 
                                     let the_time = NaiveTime::from_hms(
-                                        value.hour as u32,
-                                        value.minute as u32,
-                                        value.second as u32,
+                                        hour as u32,
+                                        minute as u32,
+                                        second as u32,
                                     );
 
                                     let diff = match (the_time - midnight).num_microseconds() {
@@ -280,7 +288,12 @@ pub fn extract(
                                         Some(diff) => diff,
                                     };
 
-                                    diff.to_le_bytes().to_vec()
+                                    let tz_diff_seconds =
+                                        (local_local - local_utc).num_seconds() + (24 * 60 * 60);
+
+                                    let total = (diff << 24) + tz_diff_seconds;
+
+                                    total.to_le_bytes().to_vec()
                                 }
                             }
                         }
@@ -319,14 +332,14 @@ pub fn extract(
                                     vec![]
                                 }
                                 Some(value) => {
-                                    let num = u64::from_str(value)?;
+                                    let num = u128::from_str(value)?;
                                     let exp = match col_type.scale {
                                         None => 0,
                                         Some(exp) => exp,
                                     };
-                                    let mul = 10_u64.pow(exp as u32);
+                                    let mul = 10_u128.pow(exp as u32);
                                     let unscaled = num * mul;
-                                    let mut unscaled_bytes = unscaled.to_le_bytes();
+                                    let mut unscaled_bytes = unscaled.to_be_bytes();
 
                                     let mut unscaled_bytes: Vec<u8> = unscaled_bytes
                                         .iter()
