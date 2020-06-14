@@ -70,6 +70,8 @@ pub fn extract(
             let mut nulls: Vec<bool> = vec![false; cols as usize];
             let mut values: Vec<Vec<u8>> = vec![];
 
+            let mut rows_written: u32 = 0;
+
             while let Some(mut cursor) = stmt.fetch()? {
                 for i in 1..(cols + 1) {
                     let col_type = &column_types[(i - 1) as usize];
@@ -392,10 +394,32 @@ pub fn extract(
                     .map(|v| *v)
                     .collect::<Vec<u8>>();
 
-                println!("flattened_values: {:?}", flattened_values);
+                let nl = nulls
+                    .iter()
+                    .map(|n| if *n { "t".to_string() } else { "f".to_string() })
+                    .collect::<Vec<String>>()
+                    .concat();
+
+                let bm = bitmap
+                    .iter()
+                    .map(|b| format!("{:b}", b))
+                    .collect::<Vec<String>>()
+                    .concat();
+
+                println!("{}", nl);
+                println!("{}", bm);
+
+                println!("nulls: {}", nulls.len());
+                println!("bitma: {}", bitmap.len());
+                println!("c/8: {}", column_types.len() / 8);
+
                 output_file.write(&row_size.to_le_bytes());
                 output_file.write(&bitmap.as_slice());
                 output_file.write_all(&flattened_values);
+
+                values = vec![];
+
+                rows_written += 1;
             }
         }
     };
@@ -415,18 +439,17 @@ fn create_nulls_bitmap(cols: i16, nulls: &Vec<bool>) -> Vec<u8> {
 
     let mut bitmap: Vec<u8> = vec![];
 
-    for byte_index in 0..bytes_needed as usize {
-        let mut byte: u8 = 0;
-        for i in 0..8 {
-            let bitfield_index = (i as i8 - 8).abs() - 1;
-            let i_adjusted = i * byte_index;
+    for i in 0..(nulls.len() / 8) {
+        let mut byte = 0_u8;
+        let subset = &nulls[(i * 8)..((i + 1) * 8)];
 
-            let null_or_not: u8 = if nulls[i_adjusted] { 1 } else { 0 };
-
-            byte |= (null_or_not << bitfield_index as u8);
+        for i in 0..subset.len() {
+            if subset[i] {
+                byte |= (1 << (i as i8 - 7).abs() as u8);
+            }
         }
 
-        bitmap.insert(0, byte);
+        bitmap.push(byte);
     }
 
     bitmap
