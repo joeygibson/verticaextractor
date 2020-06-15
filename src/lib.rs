@@ -8,7 +8,6 @@ use std::path::Path;
 use std::str::FromStr;
 
 use chrono::{Date, DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Utc};
-use odbc::odbc_safe::sys::{SQLINTERVAL, SQL_DATE_STRUCT, SQL_INTERVAL_STRUCT, SQL_INTERVAL_UNION};
 use odbc::odbc_safe::AutocommitOn;
 use odbc::ResultSetState::{Data, NoData};
 use odbc::{create_environment_v3, EncodedValue, OdbcType, SqlDate, SqlTime, SqlTimestamp};
@@ -21,6 +20,7 @@ use crate::column_type::ColumnType;
 use crate::sql_data_type::SqlDataType;
 
 mod column_type;
+mod errors;
 mod sql_data_type;
 
 const GET_COLUMN_DEFINITIONS_QUERY: &str = include_str!("sql/get_column_definitions.sql");
@@ -380,10 +380,12 @@ pub fn extract(
                         }
                     };
 
-                    &values.push(byte_val);
+                    if byte_val.len() > 0 {
+                        &values.push(byte_val);
+                    }
                 }
 
-                let bitmap = create_nulls_bitmap(cols, &nulls);
+                let bitmap = create_nulls_bitmap(&nulls);
 
                 let row_size: u32 =
                     bitmap.len() as u32 + (&values).iter().fold(0, |acc, x| acc + x.len()) as u32;
@@ -393,25 +395,6 @@ pub fn extract(
                     .flatten()
                     .map(|v| *v)
                     .collect::<Vec<u8>>();
-
-                let nl = nulls
-                    .iter()
-                    .map(|n| if *n { "t".to_string() } else { "f".to_string() })
-                    .collect::<Vec<String>>()
-                    .concat();
-
-                let bm = bitmap
-                    .iter()
-                    .map(|b| format!("{:b}", b))
-                    .collect::<Vec<String>>()
-                    .concat();
-
-                println!("{}", nl);
-                println!("{}", bm);
-
-                println!("nulls: {}", nulls.len());
-                println!("bitma: {}", bitmap.len());
-                println!("c/8: {}", column_types.len() / 8);
 
                 output_file.write(&row_size.to_le_bytes());
                 output_file.write(&bitmap.as_slice());
@@ -433,19 +416,15 @@ fn negate(bytes: &mut [u8], head: usize) {
     }
 }
 
-fn create_nulls_bitmap(cols: i16, nulls: &Vec<bool>) -> Vec<u8> {
-    let multiplier = size_of::<u8>() as i16 * 8;
-    let bytes_needed = cols / multiplier + if cols % multiplier != 0 { 1 } else { 0 };
+fn create_nulls_bitmap(nulls: &Vec<bool>) -> Vec<u8> {
+    let mut bitmap = vec![];
 
-    let mut bitmap: Vec<u8> = vec![];
-
-    for i in 0..(nulls.len() / 8) {
+    for chunk in nulls.chunks(8) {
         let mut byte = 0_u8;
-        let subset = &nulls[(i * 8)..((i + 1) * 8)];
 
-        for i in 0..subset.len() {
-            if subset[i] {
-                byte |= (1 << (i as i8 - 7).abs() as u8);
+        for (index, is_null) in chunk.iter().enumerate() {
+            if *is_null {
+                byte |= (1 << (index as i8 - 7).abs() as u8);
             }
         }
 
@@ -525,7 +504,9 @@ fn get_column_types<'env>(
                 column_types.push(ColumnType::new(&values));
             }
         }
-        NoData(_) => println!("no data returned"),
+        NoData(_) => {
+            return Err(Box::new(errors::Errors::TableNotFoundError))
+        },
     };
 
     Ok(column_types)

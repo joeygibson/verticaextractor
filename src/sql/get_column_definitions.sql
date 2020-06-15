@@ -6,4 +6,4 @@ select column_name,         -- 0
        datetime_precision,  -- 5
        interval_precision   -- 6
 from v_catalog.columns
-where table_name = 'XX_TABLE_NAME_XX';
+where lower(table_name) = lower('XX_TABLE_NAME_XX');

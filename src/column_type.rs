@@ -2,7 +2,7 @@ use crate::sql_data_type::SqlDataType;
 
 #[derive(Debug)]
 pub struct ColumnType {
-    name: String,
+    pub(crate) name: String,
     pub(crate) data_type: SqlDataType,
     pub(crate) width: u16,
     pub(crate) precision: Option<u16>,

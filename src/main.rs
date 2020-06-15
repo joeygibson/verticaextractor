@@ -31,6 +31,7 @@ fn main() {
         "PASSWORD",
     );
     opts.optopt("o", "output", "output file name", "NAME");
+    opts.optflag("f", "force", "overwrite destination file");
     opts.optopt("t", "table", "table to extract", "NAME");
     opts.optopt(
         "l",
@@ -119,12 +120,13 @@ fn main() {
         }
     };
 
+
     let output_path = Path::new(&output);
 
-    // if output_path.exists() {
-    //     eprintln!("file [{}] exists", output);
-    //     return;
-    // }
+    if output_path.exists() && !matches.opt_present("f") {
+        eprintln!("file [{}] exists; use `-f` to force", output);
+        return;
+    }
 
     match extract(
         server,
