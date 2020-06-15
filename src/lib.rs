@@ -1,20 +1,15 @@
 use std::convert::TryInto;
 use std::error::Error;
-use std::fs::{File, FileType};
+use std::fs::File;
 use std::io::Write;
-use std::mem::size_of;
-use std::ops::Sub;
 use std::path::Path;
 use std::str::FromStr;
 
-use chrono::{Date, DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use chrono::{Local, NaiveDate, NaiveTime};
 use odbc::odbc_safe::AutocommitOn;
 use odbc::ResultSetState::{Data, NoData};
-use odbc::{create_environment_v3, EncodedValue, OdbcType, SqlDate, SqlTime, SqlTimestamp};
+use odbc::{create_environment_v3, SqlDate, SqlTime, SqlTimestamp};
 use odbc::{Connection, Statement};
-use regex::Regex;
-
-use lazy_static::lazy_static;
 
 use crate::column_type::ColumnType;
 use crate::sql_data_type::SqlDataType;
@@ -63,14 +58,12 @@ pub fn extract(
         NoData(_) => println!("no data returned"),
         Data(mut stmt) => {
             let mut output_file = File::create(&output_path)?;
-            output_file.write(&FILE_HEADER);
-            output_file.write(column_definitions.as_slice());
+            output_file.write(&FILE_HEADER)?;
+            output_file.write(column_definitions.as_slice())?;
 
             let cols = stmt.num_result_cols()?;
             let mut nulls: Vec<bool> = vec![false; cols as usize];
             let mut values: Vec<Vec<u8>> = vec![];
-
-            let mut rows_written: u32 = 0;
 
             while let Some(mut cursor) = stmt.fetch()? {
                 for i in 1..(cols + 1) {
@@ -334,14 +327,14 @@ pub fn extract(
                                     vec![]
                                 }
                                 Some(value) => {
-                                    let num = u128::from_str(value)?;
+                                    let num = i128::from_str(value)?;
                                     let exp = match col_type.scale {
                                         None => 0,
                                         Some(exp) => exp,
                                     };
-                                    let mul = 10_u128.pow(exp as u32);
+                                    let mul = 10_i128.pow(exp as u32);
                                     let unscaled = num * mul;
-                                    let mut unscaled_bytes = unscaled.to_be_bytes();
+                                    let unscaled_bytes = unscaled.to_be_bytes();
 
                                     let mut unscaled_bytes: Vec<u8> = unscaled_bytes
                                         .iter()
@@ -360,7 +353,7 @@ pub fn extract(
                                     if num < 0 {
                                         negate(
                                             &mut padded_bytes,
-                                            (col_type.width as usize - byte_len),
+                                            col_type.width as usize - byte_len,
                                         );
                                     }
 
@@ -396,13 +389,11 @@ pub fn extract(
                     .map(|v| *v)
                     .collect::<Vec<u8>>();
 
-                output_file.write(&row_size.to_le_bytes());
-                output_file.write(&bitmap.as_slice());
-                output_file.write_all(&flattened_values);
+                output_file.write(&row_size.to_le_bytes())?;
+                output_file.write(&bitmap.as_slice())?;
+                output_file.write_all(&flattened_values)?;
 
                 values = vec![];
-
-                rows_written += 1;
             }
         }
     };
@@ -424,7 +415,7 @@ fn create_nulls_bitmap(nulls: &Vec<bool>) -> Vec<u8> {
 
         for (index, is_null) in chunk.iter().enumerate() {
             if *is_null {
-                byte |= (1 << (index as i8 - 7).abs() as u8);
+                byte |= 1 << (index as i8 - 7).abs() as u8;
             }
         }
 
@@ -504,9 +495,7 @@ fn get_column_types<'env>(
                 column_types.push(ColumnType::new(&values));
             }
         }
-        NoData(_) => {
-            return Err(Box::new(errors::Errors::TableNotFoundError))
-        },
+        NoData(_) => return Err(Box::new(errors::Errors::TableNotFoundError)),
     };
 
     Ok(column_types)
