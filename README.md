@@ -28,3 +28,22 @@ Options:
     -h, --help          display this help message
 ```
 
+## Building
+
+This tool interfaces with Vertica through ODBC. This means that you need [unixODBC](http://www.unixodbc.org/) installed when building.
+
+### Linux
+
+```bash
+apt-get update && apt-get install unixodbc-dev
+```
+
+### macOS
+
+```bash
+brew install unixodbc
+```
+
+## Runtime
+
+At runtime, the [Vertica ODBC driver](https://www.vertica.com/download/vertica/client-drivers/) is required.
