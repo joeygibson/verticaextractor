@@ -47,3 +47,7 @@ brew install unixodbc
 ## Runtime
 
 At runtime, the [Vertica ODBC driver](https://www.vertica.com/download/vertica/client-drivers/) is required.
+
+## TODO
+
+* Correctly support `interval` types. 
