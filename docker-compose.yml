@@ -1,0 +1,9 @@
+version: '3'
+services:
+  test:
+    image: joeygibson/cucumber-tester:v1.1.3
+    volumes:
+      - .:/project/
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /project
+    command: ["-r", "/opt/project/blackbox-test/features", "/opt/project/blackbox-test/features"]
