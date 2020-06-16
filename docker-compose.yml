@@ -1,9 +1,18 @@
 version: '3'
 services:
+  vertica:
+    image: dataplatform/docker-vertica
+    volumes:
+      - ./data/db/vertica_data:/home/dbadmin/docker
+    ports:
+      - 5433:5433
+
   test:
     image: joeygibson/cucumber-tester:v1.1.3
     volumes:
       - .:/project/
       - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /project
+    depends_on:
+      - vertica
     command: ["-r", "/opt/project/blackbox-test/features", "/opt/project/blackbox-test/features"]
