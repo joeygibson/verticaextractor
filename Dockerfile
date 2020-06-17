@@ -12,13 +12,22 @@ RUN touch build.rs && echo "fn main() {println!(\"cargo:rerun-if-changed=\\\"/tm
 RUN cargo build
 
 # build the real stuff and disable cache via the ADD
-#ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
 
 COPY ./src ./src
 RUN cargo build
 
-RUN mkdir -p /opt/bin && cp target/debug/verticaextractor /opt/bin/
+#################
+# testing image #
+#################
+FROM joeygibson/cucumber-tester:v1.1.3 as test
 
-FROM builder AS test-image
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y unixodbc-dev curl
 
-ENTRYPOINT ["/opt/bin/verticaextractor"]
+RUN curl -L https://www.vertica.com/client_drivers/10.0.x/10.0.0-0/vertica-client-10.0.0-0.x86_64.tar.gz \
+    | tar -C / -xzf -
+
+ENV PATH="/opt/vertica/bin:${PATH}"
+
+COPY --from=builder /tmp/verticaextractor/target/debug/verticaextractor .

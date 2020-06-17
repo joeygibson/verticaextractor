@@ -1,0 +1,6 @@
+<% common_parameters = "--verbose --strict --no-source --color --format pretty  --expand --require features --require support" %>
+<% json = "--format json --out test-reports/cucumber-report.json" %>
+
+default: <%= common_parameters %> <%= json %> -t ~@wip
+local: <%= common_parameters %>
+
