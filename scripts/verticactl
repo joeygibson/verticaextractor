@@ -7,17 +7,26 @@ if [[ "$#" -eq 0 ]]; then
 fi
 
 if [[ "$1" == "start" ]]; then
-  docker run -p 5433:5433 -d -v $(pwd)/data/db/vertica_data:/home/dbadmin/docker dataplatform/docker-vertica
+  docker build -t vertica $(pwd)/vertica
+  docker run -p 5433:5433 -d \
+    -e VERTICA_USER=${vertica_user} \
+    -e VERTICA_PASSWORD=${vertica_password} \
+    -v $(pwd)/data/db/vertica_data:/home/dbadmin/docker \
+    vertica > $(pwd)/.pid
 elif [[ "$1" == "stop" ]]; then
-  PID=$(docker ps | grep vertica | awk '{print $1}')
-  docker kill ${PID}
+  docker kill $(cat $(pwd)/.pid)
+  rm $(cat $(pwd)/.pid)
 elif [[ "$1" == "status" ]]; then
-  docker ps | grep vertica
+  if [[ ! -f $(pwd)/.pid ]]; then
+    echo "Vertica container not running"
+    exit 1
+  fi
+  docker ps | grep $(cat $(pwd)/.pid|cut -c1-12)
 elif [[ "$1" == "logs" ]]; then
-  PID=$(docker ps | grep vertica | awk '{print $1}')
-  docker logs $2 ${PID}
+  docker logs $2 $(cat $(pwd)/.pid)
 else 
-  echo "Usage: verticactl [start|stop]"
+  echo "Usage: verticactl [start|stop|status|logs]"
+  echo "    -f with logs will tail the log"
   exit 1
 fi
 

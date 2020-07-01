@@ -24,12 +24,7 @@ fn main() {
         "username for login [default: dbadmin]",
         "NAME",
     );
-    opts.optopt(
-        "P",
-        "password",
-        "password for user [default: none]",
-        "PASSWORD",
-    );
+    opts.optopt("P", "password", "password for user", "PASSWORD");
     opts.optopt("o", "output", "output file name", "NAME");
     opts.optflag("f", "force", "overwrite destination file");
     opts.optopt("t", "table", "table to extract", "NAME");
@@ -91,8 +86,6 @@ fn main() {
         }
     };
 
-    let password = matches.opt_str("P");
-
     let output = match matches.opt_str("o") {
         None => {
             eprintln!("output file name is required");
@@ -120,13 +113,17 @@ fn main() {
         }
     };
 
-
     let output_path = Path::new(&output);
 
     if output_path.exists() && !matches.opt_present("f") {
         eprintln!("file [{}] exists; use `-f` to force", output);
         return;
     }
+
+    let password = match matches.opt_str("P") {
+        None => get_password_from_user(),
+        Some(password) => Some(password),
+    };
 
     match extract(
         server,
@@ -140,6 +137,16 @@ fn main() {
     ) {
         Ok(_) => {}
         Err(e) => eprintln!("Error: {}", e),
+    }
+}
+
+fn get_password_from_user() -> Option<String> {
+    match rpassword::prompt_password_stdout("Password: ") {
+        Ok(password) => Some(password),
+        Err(e) => {
+            eprintln!("getting password: {}", e);
+            None
+        }
     }
 }
 
