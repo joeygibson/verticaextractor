@@ -2,7 +2,7 @@ use std::env;
 use std::path::Path;
 
 use getopts::Options;
-
+use colored::*;
 use verticaextractor::extract;
 
 fn main() {
@@ -39,7 +39,8 @@ fn main() {
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
-            eprintln!("\nerror unable to parse options: {}\n", f.to_string());
+            let msg = format!("\nerror unable to parse options: {}\n", f.to_string());
+            eprintln!("{}", msg.red());
             print_usage(&program, opts);
             return;
         }
@@ -53,7 +54,7 @@ fn main() {
     let server = match matches.opt_get_default("s", "localhost".to_string()) {
         Ok(server) => server,
         Err(_) => {
-            eprintln!("\nerror: server name must be given as a string\n");
+            eprintln!("{}", "\nerror: server name must be given as a string\n".red());
             print_usage(&program, opts);
             return;
         }
@@ -62,7 +63,7 @@ fn main() {
     let port = match matches.opt_get_default("p", 5433) {
         Ok(port) => port,
         Err(_) => {
-            eprintln!("\nerror: port must be given as an integer\n");
+            eprintln!("{}", "\nerror: port must be given as an integer\n".red());
             print_usage(&program, opts);
             return;
         }
@@ -70,7 +71,7 @@ fn main() {
 
     let database = match matches.opt_str("d") {
         None => {
-            eprintln!("\nerror: database is required\n");
+            eprintln!("{}", "\nerror: database is required\n".red());
             print_usage(&program, opts);
             return;
         }
@@ -80,7 +81,7 @@ fn main() {
     let username = match matches.opt_get_default("u", "dbadmin".to_string()) {
         Ok(username) => username,
         Err(_) => {
-            eprintln!("\nerror: username must be given as a string\n");
+            eprintln!("{}", "\nerror: username must be given as a string\n".red());
             print_usage(&program, opts);
             return;
         }
@@ -88,7 +89,7 @@ fn main() {
 
     let output = match matches.opt_str("o") {
         None => {
-            eprintln!("\nerror: output file name is required\n");
+            eprintln!("{}", "\nerror: output file name is required\n".red());
             print_usage(&program, opts);
             return;
         }
@@ -97,7 +98,7 @@ fn main() {
 
     let table = match matches.opt_str("t") {
         None => {
-            eprintln!("\nerror: table name is required\n");
+            eprintln!("{}", "\nerror: table name is required\n".red());
             print_usage(&program, opts);
             return;
         }
@@ -107,7 +108,7 @@ fn main() {
     let limit = match matches.opt_get::<usize>("l") {
         Ok(limit) => limit,
         Err(_) => {
-            eprintln!("\nerror: limit must be given as an integer\n");
+            eprintln!("{}", "\nerror: limit must be given as an integer\n".red());
             print_usage(&program, opts);
             return;
         }
@@ -116,7 +117,8 @@ fn main() {
     let output_path = Path::new(&output);
 
     if output_path.exists() && !matches.opt_present("f") {
-        eprintln!("\nerror: file [{}] exists; use `-f` to force\n", output);
+        let msg = format!("\nerror: file [{}] exists; use `-f` to force\n", output);
+        eprintln!("{}", msg.red());
         return;
     }
 
@@ -136,7 +138,10 @@ fn main() {
         output_path,
     ) {
         Ok(_) => {}
-        Err(e) => eprintln!("Error: {}", e),
+        Err(e) => {
+            let msg = format!("Error: {}", e);
+            eprintln!("{}", msg.red())
+        },
     }
 }
 
