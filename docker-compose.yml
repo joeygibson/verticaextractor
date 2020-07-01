@@ -1,12 +1,16 @@
 version: '3'
 services:
   vertica:
-    image: dataplatform/docker-vertica
-    volumes:
-      - ./data/db/vertica_data:/home/dbadmin/docker
+    build: vertica
+    environment:
+      - VERTICA_USER=${vertica_user}
+      - VERTICA_PASSWORD=${vertica_password}
 
   test:
     build: .
+    environment:
+      - VERTICA_USER=${vertica_user}
+      - VERTICA_PASSWORD=${vertica_password}
     volumes:
       - .:/project/
       - /var/run/docker.sock:/var/run/docker.sock

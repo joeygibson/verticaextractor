@@ -11,5 +11,5 @@ And(/^there are no tables$/) do
 end
 
 def vertica_query(query)
-    %x{vsql -h vertica -U dbadmin -c "#{query}" 2>&1}
+    %x{vsql -h vertica -U #{ENV["VERTICA_USER"]} -w #{ENV["VERTICA_PASSWORD"]} -c "#{query}" 2>&1}
 end

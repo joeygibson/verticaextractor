@@ -12,7 +12,8 @@ RUN touch build.rs && echo "fn main() {println!(\"cargo:rerun-if-changed=\\\"/tm
 RUN cargo build
 
 # build the real stuff and disable cache via the ADD
-ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+#ADD "https://www.random.org/cgi-bin/randbyte?nbytes=10&format=h" skipcache
+RUN echo $RANDOM > skipcache
 
 COPY ./src ./src
 RUN cargo build
