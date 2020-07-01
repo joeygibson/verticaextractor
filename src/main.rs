@@ -39,7 +39,7 @@ fn main() {
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
-            eprintln!("unable to parse options: {}", f.to_string());
+            eprintln!("\nerror unable to parse options: {}\n", f.to_string());
             print_usage(&program, opts);
             return;
         }
@@ -53,7 +53,7 @@ fn main() {
     let server = match matches.opt_get_default("s", "localhost".to_string()) {
         Ok(server) => server,
         Err(_) => {
-            eprintln!("server name must be given as a string");
+            eprintln!("\nerror: server name must be given as a string\n");
             print_usage(&program, opts);
             return;
         }
@@ -62,7 +62,7 @@ fn main() {
     let port = match matches.opt_get_default("p", 5433) {
         Ok(port) => port,
         Err(_) => {
-            eprintln!("port must be given as an integer");
+            eprintln!("\nerror: port must be given as an integer\n");
             print_usage(&program, opts);
             return;
         }
@@ -70,7 +70,7 @@ fn main() {
 
     let database = match matches.opt_str("d") {
         None => {
-            eprintln!("database is required");
+            eprintln!("\nerror: database is required\n");
             print_usage(&program, opts);
             return;
         }
@@ -80,7 +80,7 @@ fn main() {
     let username = match matches.opt_get_default("u", "dbadmin".to_string()) {
         Ok(username) => username,
         Err(_) => {
-            eprintln!("username must be given as a string");
+            eprintln!("\nerror: username must be given as a string\n");
             print_usage(&program, opts);
             return;
         }
@@ -88,7 +88,7 @@ fn main() {
 
     let output = match matches.opt_str("o") {
         None => {
-            eprintln!("output file name is required");
+            eprintln!("\nerror: output file name is required\n");
             print_usage(&program, opts);
             return;
         }
@@ -97,7 +97,7 @@ fn main() {
 
     let table = match matches.opt_str("t") {
         None => {
-            eprintln!("table name is required");
+            eprintln!("\nerror: table name is required\n");
             print_usage(&program, opts);
             return;
         }
@@ -107,7 +107,7 @@ fn main() {
     let limit = match matches.opt_get::<usize>("l") {
         Ok(limit) => limit,
         Err(_) => {
-            eprintln!("limit must be given as an integer");
+            eprintln!("\nerror: limit must be given as an integer\n");
             print_usage(&program, opts);
             return;
         }
@@ -116,7 +116,7 @@ fn main() {
     let output_path = Path::new(&output);
 
     if output_path.exists() && !matches.opt_present("f") {
-        eprintln!("file [{}] exists; use `-f` to force", output);
+        eprintln!("\nerror: file [{}] exists; use `-f` to force\n", output);
         return;
     }
 
