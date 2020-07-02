@@ -1,8 +1,9 @@
 use std::env;
 use std::path::Path;
 
-use getopts::Options;
 use colored::*;
+use getopts::Options;
+
 use verticaextractor::extract;
 
 fn main() {
@@ -10,24 +11,31 @@ fn main() {
     let program = args[0].clone();
 
     let mut opts = Options::new();
-    opts.optopt(
-        "s",
-        "server",
-        "server to connect to [default: localhost]",
-        "NAME",
+
+    let database_help = format!("database to extract from {}", "*".bright_red());
+    opts.optopt("d", "database", database_help.as_str(), "NAME");
+
+    let table_help = format!("table to extract {}", "*".bright_red());
+    opts.optopt("t", "table", table_help.as_str(), "NAME");
+
+    let output_help = format!("output file name {}", "*".bright_red());
+    opts.optopt("o", "output", output_help.as_str(), "NAME");
+
+    let server_help = format!(
+        "server to connect to {}",
+        "[default: localhost]".bright_green()
     );
-    opts.optopt("p", "port", "port to connect to [default: 5433]", "NUMBER");
-    opts.optopt("d", "database", "database to extract from", "NAME");
-    opts.optopt(
-        "u",
-        "username",
-        "username for login [default: dbadmin]",
-        "NAME",
-    );
+    opts.optopt("s", "server", server_help.as_str(), "NAME");
+
+    let port_help = format!("port to connect to {}", "[default: 5433]".bright_green());
+    opts.optopt("p", "port", port_help.as_str(), "NUMBER");
+
+    let username_help = format!("username for login {}", "[default: dbadmin]".bright_green());
+    opts.optopt("u", "username", username_help.as_str(), "NAME");
     opts.optopt("P", "password", "password for user", "PASSWORD");
-    opts.optopt("o", "output", "output file name", "NAME");
+
     opts.optflag("f", "force", "overwrite destination file");
-    opts.optopt("t", "table", "table to extract", "NAME");
+
     opts.optopt(
         "l",
         "limit",
@@ -40,13 +48,21 @@ fn main() {
         Ok(m) => m,
         Err(f) => {
             let msg = format!("\nerror unable to parse options: {}\n", f.to_string());
-            eprintln!("{}", msg.red());
+            eprintln!("{}", msg.bright_red());
             print_usage(&program, opts);
             return;
         }
     };
 
-    if matches.opt_present("h") {
+    // If no options at all, or `-h` are passed, print out the help,
+    // without an error, and exit
+    if matches.opt_present("h")
+        || !matches.opts_present(&[
+            "table".to_string(),
+            "output".to_string(),
+            "database".to_string(),
+        ])
+    {
         print_usage(&program, opts);
         return;
     }
@@ -54,7 +70,10 @@ fn main() {
     let server = match matches.opt_get_default("s", "localhost".to_string()) {
         Ok(server) => server,
         Err(_) => {
-            eprintln!("{}", "\nerror: server name must be given as a string\n".red());
+            eprintln!(
+                "{}",
+                "\nerror: server name must be given as a string\n".bright_red()
+            );
             print_usage(&program, opts);
             return;
         }
@@ -63,7 +82,10 @@ fn main() {
     let port = match matches.opt_get_default("p", 5433) {
         Ok(port) => port,
         Err(_) => {
-            eprintln!("{}", "\nerror: port must be given as an integer\n".red());
+            eprintln!(
+                "{}",
+                "\nerror: port must be given as an integer\n".bright_red()
+            );
             print_usage(&program, opts);
             return;
         }
@@ -71,7 +93,7 @@ fn main() {
 
     let database = match matches.opt_str("d") {
         None => {
-            eprintln!("{}", "\nerror: database is required\n".red());
+            eprintln!("{}", "\nerror: database is required\n".bright_red());
             print_usage(&program, opts);
             return;
         }
@@ -81,7 +103,10 @@ fn main() {
     let username = match matches.opt_get_default("u", "dbadmin".to_string()) {
         Ok(username) => username,
         Err(_) => {
-            eprintln!("{}", "\nerror: username must be given as a string\n".red());
+            eprintln!(
+                "{}",
+                "\nerror: username must be given as a string\n".bright_red()
+            );
             print_usage(&program, opts);
             return;
         }
@@ -89,7 +114,7 @@ fn main() {
 
     let output = match matches.opt_str("o") {
         None => {
-            eprintln!("{}", "\nerror: output file name is required\n".red());
+            eprintln!("{}", "\nerror: output file name is required\n".bright_red());
             print_usage(&program, opts);
             return;
         }
@@ -98,7 +123,7 @@ fn main() {
 
     let table = match matches.opt_str("t") {
         None => {
-            eprintln!("{}", "\nerror: table name is required\n".red());
+            eprintln!("{}", "\nerror: table name is required\n".bright_red());
             print_usage(&program, opts);
             return;
         }
@@ -108,7 +133,10 @@ fn main() {
     let limit = match matches.opt_get::<usize>("l") {
         Ok(limit) => limit,
         Err(_) => {
-            eprintln!("{}", "\nerror: limit must be given as an integer\n".red());
+            eprintln!(
+                "{}",
+                "\nerror: limit must be given as an integer\n".bright_red()
+            );
             print_usage(&program, opts);
             return;
         }
@@ -118,7 +146,7 @@ fn main() {
 
     if output_path.exists() && !matches.opt_present("f") {
         let msg = format!("\nerror: file [{}] exists; use `-f` to force\n", output);
-        eprintln!("{}", msg.red());
+        eprintln!("{}", msg.bright_red());
         return;
     }
 
@@ -140,8 +168,8 @@ fn main() {
         Ok(_) => {}
         Err(e) => {
             let msg = format!("Error: {}", e);
-            eprintln!("{}", msg.red())
-        },
+            eprintln!("{}", msg.bright_red())
+        }
     }
 }
 
@@ -156,7 +184,10 @@ fn get_password_from_user() -> Option<String> {
 }
 
 fn print_usage(program: &str, opts: Options) {
-    let brief = format!("Usage: {} [options]", program);
+    let brief = format!(
+        "Usage: {} [options]\n\toptions with * are required",
+        program
+    );
 
     println!("{}", opts.usage(&brief));
 }
