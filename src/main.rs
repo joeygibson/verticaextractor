@@ -185,8 +185,9 @@ fn get_password_from_user() -> Option<String> {
 
 fn print_usage(program: &str, opts: Options) {
     let brief = format!(
-        "Usage: {} [options]\n\toptions with * are required",
-        program
+        "Usage: {} [options]\n\toptions with {} are required",
+        program,
+        "*".bright_red()
     );
 
     println!("{}", opts.usage(&brief));
