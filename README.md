@@ -1,4 +1,5 @@
 # Vertica Extractor
+[![Build Status](https://travis-ci.org/joeygibson/verticaextractor.svg?branch=master)](https://travis-ci.org/joeygibson/verticaextractor)
 
 A tool to read data from Vertica tables 
 and write out [Vertica native binary files](https://www.vertica.com/docs/9.3.x/HTML/Content/Authoring/AdministratorsGuide/BinaryFilesAppendix/CreatingNativeBinaryFormatFiles.htm). 
