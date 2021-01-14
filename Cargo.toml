@@ -1,6 +1,6 @@
 [package]
 name = "verticaextractor"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Joey Gibson <joey@joeygibson.com>"]
 edition = "2018"
 description = "A program to extract data from Vertica tables, and write out native binary files."
