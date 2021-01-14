@@ -110,6 +110,7 @@ pub fn extract(
                 output_file.write_all(&flattened_values)?;
 
                 row_data.clear();
+                nulls = vec![false; cols as usize];
             }
         }
     };
