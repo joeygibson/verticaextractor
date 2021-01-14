@@ -283,7 +283,7 @@ checksum = "caaa9d531767d1ff2150b9332433f32a24622147e5ebb1f26409d5da67afd479"
 
 [[package]]
 name = "verticaextractor"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "chrono",
  "colored",

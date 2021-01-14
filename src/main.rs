@@ -6,6 +6,8 @@ use getopts::Options;
 
 use verticaextractor::extract;
 
+const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let program = args[0].clone();
@@ -42,7 +44,9 @@ fn main() {
         "maximum number of rows to extract from <table>",
         "NUMBER",
     );
+
     opts.optflag("h", "help", "display this help message");
+    opts.optflag("v", "version", "display the program version");
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -53,6 +57,11 @@ fn main() {
             return;
         }
     };
+
+    if matches.opt_present("v") {
+        println!("{}", VERSION);
+        return;
+    }
 
     // If no options at all, or `-h` are passed, print out the help,
     // without an error, and exit
