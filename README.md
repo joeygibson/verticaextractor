@@ -1,14 +1,16 @@
 # Vertica Extractor
-[![Build Status](https://travis-ci.org/joeygibson/verticaextractor.svg?branch=master)](https://travis-ci.org/joeygibson/verticaextractor)
+
+![Build Status](https://github.com/joeygibson/verticaextractor/workflows/build/badge.svg)
+![Release Status](https://github.com/joeygibson/verticaextractor/workflows/release/badge.svg)
 
 A tool to read data from Vertica tables 
-and write out [Vertica native binary files](https://www.vertica.com/docs/9.3.x/HTML/Content/Authoring/AdministratorsGuide/BinaryFilesAppendix/CreatingNativeBinaryFormatFiles.htm). 
+and write out [Vertica native binary files](https://www.vertica.com/docs/9.3.x/HTML/Content/Authoring/AdministratorsGuide/BinaryFilesAppendix/CreatingNativeBinaryFormatFiles.htm).
 
-This is a companion tool to [Vertica Reader](https://github.com/joeygibson/verticareader), 
+This is a companion tool to [Vertica Reader](https://github.com/joeygibson/verticareader),
 which can dump the contents of a native binary file to CSV.
- 
-**Note:** This is still very early in development, and the code is quite ugly. I'm working 
-on making it better. And yes, tests are coming. 
+
+**Note:** This is still very early in development, and the code is quite ugly. I'm working
+on making it better. And yes, tests are coming.
 
 ## Usage
 
